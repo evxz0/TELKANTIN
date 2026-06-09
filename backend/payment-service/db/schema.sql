@@ -1,0 +1,22 @@
+CREATE DATABASE IF NOT EXISTS kantin_payment_db;
+USE kantin_payment_db;
+
+CREATE TABLE IF NOT EXISTS payments (
+    id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    payment_method ENUM('CASH', 'E_WALLET') NOT NULL,
+    status ENUM('PENDING', 'SUCCESS', 'FAILED') DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_order_id (order_id)
+);
+
+CREATE TABLE IF NOT EXISTS invoices (
+    id VARCHAR(50) PRIMARY KEY,
+    payment_id VARCHAR(50) NOT NULL,
+    invoice_number VARCHAR(100) UNIQUE NOT NULL,
+    total_paid DECIMAL(10, 2) NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE RESTRICT
+);

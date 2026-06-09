@@ -5,7 +5,8 @@
   "private": true,
   "workspaces": [
     "user-service",
-    "order-service"
+    "order-service",
+    "payment-service"
   ],
   "homepage": "https://github.com/evxz0/TELKANTIN#readme",
   "bugs": {
@@ -23,6 +24,9 @@
     "dev:order": "cd order-service && npm run dev",
     "start:order": "cd order-service && npm start",
     "install:order": "cd order-service && npm install",
+    "dev:payment": "cd payment-service && npm run dev",
+    "start:payment": "cd payment-service && npm start",
+    "install:payment": "cd payment-service && npm install",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"

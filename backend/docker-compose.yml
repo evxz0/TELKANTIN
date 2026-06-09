@@ -15,6 +15,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./user-service/src/config/schema.sql:/docker-entrypoint-initdb.d/01-user-schema.sql
       - ./order-service/src/config/schema.sql:/docker-entrypoint-initdb.d/02-order-schema.sql
+      - ./payment-service/db/schema.sql:/docker-entrypoint-initdb.d/03-payment-schema.sql
     networks:
       - telkantin-network
     healthcheck:
@@ -90,16 +91,26 @@ services:
     networks:
       - telkantin-network
 
-  # payment-service:
-  #   build:
-  #     context: ./payment-service
-  #   ports:
-  #     - "3004:3000"
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  #   networks:
-  #     - telkantin-network
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: telkantin-payment-service
+    restart: unless-stopped
+    ports:
+      - "3004:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      DB_NAME: kantin_payment_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - telkantin-network
 
 volumes:
   mysql_data:
