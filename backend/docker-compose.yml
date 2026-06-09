@@ -13,9 +13,10 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./user-service/src/config/schema.sql:/docker-entrypoint-initdb.d/01-user-schema.sql
-      - ./order-service/src/config/schema.sql:/docker-entrypoint-initdb.d/02-order-schema.sql
-      - ./payment-service/db/schema.sql:/docker-entrypoint-initdb.d/03-payment-schema.sql
+      - ./user-service/user.sql:/docker-entrypoint-initdb.d/01-user-schema.sql
+      - ./merchant-service/merchant.sql:/docker-entrypoint-initdb.d/02-merchant-schema.sql
+      - ./order-service/order.sql:/docker-entrypoint-initdb.d/03-order-schema.sql
+      - ./payment-service/payment.sql:/docker-entrypoint-initdb.d/04-payment-schema.sql
     networks:
       - telkantin-network
     healthcheck:
@@ -52,17 +53,19 @@ services:
     networks:
       - telkantin-network
 
-  # ── Placeholder services (akan dibangun tim lain) ────────────────────
-  # menu-service:
-  #   build:
-  #     context: ./menu-service
-  #   ports:
-  #     - "3002:3000"
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  #   networks:
-  #     - telkantin-network
+  merchant-service:
+    build:
+      context: ./merchant-service
+      dockerfile: Dockerfile
+    container_name: telkantin-merchant-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - telkantin-network
 
   order-service:
     build:
@@ -71,7 +74,7 @@ services:
     container_name: telkantin-order-service
     restart: unless-stopped
     ports:
-      - "3003:3000"
+      - "3003:3003"
     environment:
       PORT: 3000
       DB_HOST: mysql
@@ -98,7 +101,7 @@ services:
     container_name: telkantin-payment-service
     restart: unless-stopped
     ports:
-      - "3004:3000"
+      - "3004:3004"
     environment:
       PORT: 3000
       DB_HOST: mysql
@@ -106,6 +109,33 @@ services:
       DB_USER: root
       DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
       DB_NAME: kantin_payment_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - telkantin-network
+
+  # ── Analytics & Report Service (Python/FastAPI) ──────────────────
+  analytics-service:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    container_name: telkantin-analytics-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      DB_NAME: telkantin
+      PAYMENT_DB_HOST: mysql
+      PAYMENT_DB_PORT: 3306
+      PAYMENT_DB_USER: root
+      PAYMENT_DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      PAYMENT_DB_NAME: kantin_payment_db
     depends_on:
       mysql:
         condition: service_healthy

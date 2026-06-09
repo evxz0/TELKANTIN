@@ -1,22 +1,7 @@
-# Stage 1: Install dependencies saja
-FROM node:20-alpine AS builder
+FROM python:3.12-slim
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-# Stage 2: Jalankan aplikasi dengan image super ramping & aman
-FROM node:20-alpine
-WORKDIR /app
-
-# Best Practice Keamanan Container: Jalankan sebagai user non-root
-USER node
-
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node . .
-
-ENV NODE_ENV=production
-ENV PORT=3000
-
-EXPOSE 3000
-
-CMD ["node", "src/server.js"]
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 3004
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "3004"]
