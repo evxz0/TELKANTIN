@@ -14,6 +14,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./user-service/src/config/schema.sql:/docker-entrypoint-initdb.d/01-user-schema.sql
+      - ./order-service/src/config/schema.sql:/docker-entrypoint-initdb.d/02-order-schema.sql
     networks:
       - telkantin-network
     healthcheck:
@@ -62,16 +63,32 @@ services:
   #   networks:
   #     - telkantin-network
 
-  # order-service:
-  #   build:
-  #     context: ./order-service
-  #   ports:
-  #     - "3003:3000"
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  #   networks:
-  #     - telkantin-network
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: telkantin-order-service
+    restart: unless-stopped
+    ports:
+      - "3003:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      DB_NAME: telkantin
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret}
+      MENU_SERVICE_URL: http://merchant-service:3002
+      PAYMENT_SERVICE_URL: http://payment-service:3004
+      CORS_ORIGIN: "*"
+      RATE_LIMIT_MAX: 100
+      RATE_LIMIT_WINDOW_MS: 900000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - telkantin-network
 
   # payment-service:
   #   build:
