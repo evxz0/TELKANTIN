@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # ── Database ─────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: telkantin-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: telkantin
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./user-service/src/config/schema.sql:/docker-entrypoint-initdb.d/01-user-schema.sql
+    networks:
+      - telkantin-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── User & Auth Service ──────────────────────────────────────────────
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: telkantin-user-service
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      DB_NAME: telkantin
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      BCRYPT_SALT_ROUNDS: 12
+      CORS_ORIGIN: "*"
+      RATE_LIMIT_MAX: 20
+      RATE_LIMIT_WINDOW_MS: 900000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - telkantin-network
+
+  # ── Placeholder services (akan dibangun tim lain) ────────────────────
+  # menu-service:
+  #   build:
+  #     context: ./menu-service
+  #   ports:
+  #     - "3002:3000"
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #   networks:
+  #     - telkantin-network
+
+  # order-service:
+  #   build:
+  #     context: ./order-service
+  #   ports:
+  #     - "3003:3000"
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #   networks:
+  #     - telkantin-network
+
+  # payment-service:
+  #   build:
+  #     context: ./payment-service
+  #   ports:
+  #     - "3004:3000"
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #   networks:
+  #     - telkantin-network
+
+volumes:
+  mysql_data:
+
+networks:
+  telkantin-network:
+    driver: bridge
