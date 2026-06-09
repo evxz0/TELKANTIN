@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3002;
 
 // ── Security headers ────────────────────────────────────────────────────
 app.use(helmet());
@@ -24,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Rate limiting ───────────────────────────────────────────────────────
 const apiLimiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   max: Number(process.env.RATE_LIMIT_MAX) || 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -55,6 +56,10 @@ app.use('/api/categories', categoryRoutes);
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ message: 'Internal Server Error' });
+});
+
+app.listen(PORT, () => {
+  console.log(`Merchant & Menu Service running on port ${PORT}`);
 });
 
 module.exports = app;

@@ -1,18 +1,17 @@
 const menuModel = require('../models/menuModel');
-const categoryModel = require('../models/categoryModel');
 
 exports.createMenu = async (req, res) => {
   try {
-    const { merchantId, categoryId, name, description, price, stock, imageUrl } = req.body;
+    const { merchant_id, category_id, name, description, price, stock, image_url } = req.body;
 
     const newMenu = await menuModel.createMenu({
-      merchantId,
-      categoryId,
+      merchant_id,
+      category_id,
       name,
       description,
       price,
       stock,
-      imageUrl
+      image_url
     });
 
     res.status(201).json({
@@ -29,7 +28,7 @@ exports.getMenusByMerchant = async (req, res) => {
   try {
     const { merchantId } = req.params;
     const menus = await menuModel.getMenusByMerchant(merchantId);
-    
+
     res.status(200).json({ data: menus });
   } catch (error) {
     console.error(error);
@@ -41,7 +40,7 @@ exports.getMenuById = async (req, res) => {
   try {
     const { id } = req.params;
     const menu = await menuModel.getMenuById(id);
-    
+
     if (!menu) {
       return res.status(404).json({ message: 'Menu tidak ditemukan' });
     }
@@ -56,22 +55,23 @@ exports.getMenuById = async (req, res) => {
 exports.updateMenu = async (req, res) => {
   try {
     const { id } = req.params;
-    const { categoryId, name, description, price, stock, isAvailable, imageUrl } = req.body;
+    const { category_id, name, description, price, stock, is_available, image_url } = req.body;
 
-    const updatedMenu = await menuModel.updateMenu(id, {
-      categoryId,
+    const updated = await menuModel.updateMenu(id, {
+      category_id,
       name,
       description,
       price,
       stock,
-      isAvailable,
-      imageUrl
+      is_available,
+      image_url
     });
 
-    res.status(200).json({
-      message: 'Menu berhasil diupdate',
-      data: updatedMenu
-    });
+    if (!updated) {
+      return res.status(404).json({ message: 'Menu tidak ditemukan' });
+    }
+
+    res.status(200).json({ message: 'Menu berhasil diupdate' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Terjadi kesalahan pada server' });
@@ -81,7 +81,12 @@ exports.updateMenu = async (req, res) => {
 exports.deleteMenu = async (req, res) => {
   try {
     const { id } = req.params;
-    await menuModel.deleteMenu(id);
+    const deleted = await menuModel.deleteMenu(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Menu tidak ditemukan' });
+    }
+
     res.status(200).json({ message: 'Menu berhasil dihapus' });
   } catch (error) {
     console.error(error);
