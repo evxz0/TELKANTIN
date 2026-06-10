@@ -12,4 +12,8 @@ coverage/
 .nyc_output/
 .vscode/
 .idea/
-
+__pycache__/
+.pytest_cache/
+node_modules/
+**/node_modules/
+*.pyc
