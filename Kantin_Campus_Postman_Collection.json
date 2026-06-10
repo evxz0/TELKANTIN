@@ -1,0 +1,259 @@
+{
+  "info": {
+    "name": "Kantin Campus API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3001/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Query: me",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3001/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["graphql"]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  me {\n    id\n    fullName\n    email\n    role\n  }\n}"
+              }
+            }
+          }
+        },
+        {
+          "name": "Mutation: login",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3001/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["graphql"]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  login(email: \"afif@example.com\", password: \"secret\")\n}"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Merchant Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3002/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Get Merchants",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3002/api/merchants",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["api", "merchants"]
+            }
+          }
+        },
+        {
+          "name": "Create Merchant",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3002/api/merchants",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["api", "merchants"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kantin Teh Meli\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3003/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Query: orders",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3003/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["graphql"]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  orders {\n    id\n    menuName\n    quantity\n    totalPrice\n  }\n}"
+              }
+            }
+          }
+        },
+        {
+          "name": "Mutation: checkout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3003/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["graphql"]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  checkout(notes: \"Pedas sedang ya\")\n}"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3004/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3004",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Process Payment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3004/api/payments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3004",
+              "path": ["api", "payments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Get Sales Analytics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/analytics/sales",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "analytics", "sales"]
+            }
+          }
+        },
+        {
+          "name": "Track Sale Event",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:8000/api/analytics/track-sale",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "analytics", "track-sale"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menu_id\": 15,\n  \"quantity\": 2,\n  \"price\": 15000.0\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
