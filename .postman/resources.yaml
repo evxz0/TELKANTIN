@@ -1,7 +1,0 @@
-# Use this workspace to collaborate
-workspace:
-  id: b629fd29-4080-4641-8a88-092e40baf775
-
-localResources:
-  collections:
-    - ..\Kantin_Campus_Postman_Collection.json
