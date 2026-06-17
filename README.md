@@ -6,12 +6,12 @@ Proyek ini menggunakan arsitektur *polyglot* dengan struktur file *flat* yang ri
 
 ## 🏗 Arsitektur Sistem
 
-Proyek ini terdiri dari 5 *microservice* mandiri dan 1 *database* terpusat (untuk tujuan simulasi, berjalan pada satu instansi MySQL dengan tabel yang terpisah).
+Proyek ini terdiri dari 5 *microservice* mandiri dengan arsitektur *polyglot persistence* — menggunakan MySQL sebagai database utama dan MongoDB khusus untuk Merchant Service.
 
 | Service | Port | Teknologi Utama | Deskripsi | API Tipe |
 |---------|------|-----------------|-----------|----------|
 | **User Service** | `3001` | Go, Gin | Manajemen pengguna, registrasi, login | REST |
-| **Merchant Service** | `3002` | Node.js, Express, GraphQL | Manajemen data toko/kantin dan menu | GraphQL |
+| **Merchant Service** | `3002` | Node.js, Express, GraphQL, **MongoDB** | Manajemen data toko/kantin dan menu | GraphQL |
 | **Order Service** | `3003` | Python, FastAPI, Strawberry | Mengurus keranjang belanja dan transaksi checkout | GraphQL & REST |
 | **Payment Service** | `3004` | Python, FastAPI | Validasi pembayaran | REST |
 | **Analytics Service** | `8000` | Python, FastAPI | Mengolah data penjualan dan menu terlaris | REST |
@@ -50,7 +50,7 @@ Karena seluruh konfigurasi (*environment*, dependensi, struktur database) sudah 
    docker-compose up -d --build
    ```
    Perintah ini akan secara otomatis:
-   - Mengunduh *image* yang dibutuhkan (Go, Node.js, Python, MySQL).
+    - Mengunduh *image* yang dibutuhkan (Go, Node.js, Python, MySQL, MongoDB).
    - Menginstal semua modul dependensi tiap layanan.
    - Membuat otomatis tabel-tabel database (melalui file `.sql` yang ada).
    - Menjalankan ke-5 layanan.

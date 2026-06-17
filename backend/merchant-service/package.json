@@ -1,7 +1,7 @@
 {
   "name": "merchant-service",
   "version": "1.0.0",
-  "description": "Merchant Service using Express and GraphQL",
+  "description": "Merchant Service using Express, GraphQL, and MongoDB",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -12,7 +12,7 @@
     "express": "^4.18.2",
     "express-graphql": "^0.12.0",
     "graphql": "^15.8.0",
-    "mysql2": "^3.9.2"
+    "mongoose": "^8.5.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

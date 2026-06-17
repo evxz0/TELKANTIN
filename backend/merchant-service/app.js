@@ -1,59 +1,71 @@
 const express = require('express');
 const { graphqlHTTP } = require('express-graphql');
 const { buildSchema } = require('graphql');
-const mysql = require('mysql2/promise');
+const mongoose = require('mongoose');
 const cors = require('cors');
 
-// Membuat koneksi ke database MySQL (Pool Koneksi)
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'rootpassword',
-  database: process.env.DB_NAME || 'telkantin',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+// ── Koneksi MongoDB ──────────────────────────────────────────────────
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/telkantin';
 
-// Membuat struktur skema GraphQL menggunakan Bahasa Indonesia
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ Berhasil terhubung ke MongoDB'))
+  .catch(err => {
+    console.error('❌ Gagal terhubung ke MongoDB:', err.message);
+    process.exit(1);
+  });
+
+// ── Model Mongoose ───────────────────────────────────────────────────
+const merchantSchema = new mongoose.Schema({
+  name:     { type: String, required: true, maxlength: 100 },
+  location: { type: String, maxlength: 255, default: null }
+}, { timestamps: true });
+
+const menuSchema = new mongoose.Schema({
+  merchant_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Merchant', required: true },
+  name:        { type: String, required: true, maxlength: 100 },
+  price:       { type: Number, required: true }
+}, { timestamps: true });
+
+const Merchant = mongoose.model('Merchant', merchantSchema);
+const Menu     = mongoose.model('Menu', menuSchema);
+
+// ── Skema GraphQL ────────────────────────────────────────────────────
 const schema = buildSchema(`
   type Toko {
-    id: Int!
+    id: String!
     nama: String!
     lokasi: String
   }
 
   type Menu {
-    id: Int!
-    id_toko: Int!
+    id: String!
+    id_toko: String!
     nama_menu: String!
     harga: Float!
   }
 
   type Query {
     semuaToko: [Toko]
-    tokoBerdasarkanId(id: Int!): Toko
-    menuToko(id_toko: Int!): [Menu]
+    tokoBerdasarkanId(id: String!): Toko
+    menuToko(id_toko: String!): [Menu]
   }
 
   type Mutation {
     tambahToko(nama: String!, lokasi: String): Toko
-    tambahMenu(id_toko: Int!, nama_menu: String!, harga: Float!): Menu
+    tambahMenu(id_toko: String!, nama_menu: String!, harga: Float!): Menu
   }
 `);
 
-// Fungsi-fungsi untuk menangani perintah GraphQL (Resolvers)
+// ── Resolvers ────────────────────────────────────────────────────────
 const root = {
   // Mengambil semua data toko dari database
   semuaToko: async () => {
     try {
-      const [baris] = await pool.query('SELECT * FROM merchants');
-      // Menyesuaikan nama kolom database (Inggris) ke struktur GraphQL (Indonesia)
-      return baris.map(data => ({
-        id: data.id,
-        nama: data.name,
-        lokasi: data.location
+      const merchants = await Merchant.find();
+      return merchants.map(m => ({
+        id: m._id.toString(),
+        nama: m.name,
+        lokasi: m.location
       }));
     } catch (error) {
       throw new Error('Gagal mengambil data semua toko: ' + error.message);
@@ -63,10 +75,9 @@ const root = {
   // Mengambil data satu toko berdasarkan ID
   tokoBerdasarkanId: async ({ id }) => {
     try {
-      const [baris] = await pool.query('SELECT * FROM merchants WHERE id = ?', [id]);
-      if (baris.length === 0) return null;
-      const data = baris[0];
-      return { id: data.id, nama: data.name, lokasi: data.location };
+      const m = await Merchant.findById(id);
+      if (!m) return null;
+      return { id: m._id.toString(), nama: m.name, lokasi: m.location };
     } catch (error) {
       throw new Error('Gagal mengambil data toko: ' + error.message);
     }
@@ -75,12 +86,12 @@ const root = {
   // Mengambil daftar menu berdasarkan ID toko
   menuToko: async ({ id_toko }) => {
     try {
-      const [baris] = await pool.query('SELECT * FROM menus WHERE merchant_id = ?', [id_toko]);
-      return baris.map(data => ({
-        id: data.id,
-        id_toko: data.merchant_id,
-        nama_menu: data.name,
-        harga: data.price
+      const menus = await Menu.find({ merchant_id: id_toko });
+      return menus.map(m => ({
+        id: m._id.toString(),
+        id_toko: m.merchant_id.toString(),
+        nama_menu: m.name,
+        harga: m.price
       }));
     } catch (error) {
       throw new Error('Gagal mengambil data menu: ' + error.message);
@@ -90,11 +101,8 @@ const root = {
   // Menambahkan toko baru ke database
   tambahToko: async ({ nama, lokasi }) => {
     try {
-      const [hasil] = await pool.query(
-        'INSERT INTO merchants (name, location) VALUES (?, ?)',
-        [nama, lokasi || null]
-      );
-      return { id: hasil.insertId, nama: nama, lokasi: lokasi };
+      const merchant = await Merchant.create({ name: nama, location: lokasi || null });
+      return { id: merchant._id.toString(), nama: merchant.name, lokasi: merchant.location };
     } catch (error) {
       throw new Error('Gagal menambahkan toko baru: ' + error.message);
     }
@@ -103,25 +111,33 @@ const root = {
   // Menambahkan menu baru ke database
   tambahMenu: async ({ id_toko, nama_menu, harga }) => {
     try {
-      const [hasil] = await pool.query(
-        'INSERT INTO menus (merchant_id, name, price) VALUES (?, ?, ?)',
-        [id_toko, nama_menu, harga]
-      );
-      return { id: hasil.insertId, id_toko: id_toko, nama_menu: nama_menu, harga: harga };
+      const menu = await Menu.create({ merchant_id: id_toko, name: nama_menu, price: harga });
+      return {
+        id: menu._id.toString(),
+        id_toko: menu.merchant_id.toString(),
+        nama_menu: menu.name,
+        harga: menu.price
+      };
     } catch (error) {
       throw new Error('Gagal menambahkan menu baru: ' + error.message);
     }
   }
 };
 
+// ── Express Server ───────────────────────────────────────────────────
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
 // Rute sederhana untuk mengecek apakah server menyala
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', layanan: 'merchant-service (Layanan Toko - Node.js)' });
+app.get('/health', async (req, res) => {
+  const dbState = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({
+    status: 'ok',
+    layanan: 'merchant-service (Layanan Toko - Node.js)',
+    database: { type: 'MongoDB', status: dbState }
+  });
 });
 
 // Mengatur jalur (endpoint) utama untuk GraphQL

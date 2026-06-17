@@ -10,8 +10,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-
-
 type User struct {
 	ID       int    `json:"id"`
 	FullName string `json:"full_name"`
@@ -19,7 +17,6 @@ type User struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
-
 
 var db *sql.DB
 
@@ -39,8 +36,6 @@ func connectDB() {
 
 	log.Println("PostgreSQL Connected")
 }
-
-
 
 func createUser(c *gin.Context) {
 	var user User
@@ -202,7 +197,6 @@ func deleteUser(c *gin.Context) {
 		"message": "User deleted",
 	})
 }
-
 
 func main() {
 	connectDB()
