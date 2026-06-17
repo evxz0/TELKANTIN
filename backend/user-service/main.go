@@ -10,8 +10,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// ── Model ───────────────────────────────────────────────────────────────
-
 type User struct {
 	ID       int    `json:"id"`
 	FullName string `json:"full_name"`
@@ -19,8 +17,6 @@ type User struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
-
-// ── Database ────────────────────────────────────────────────────────────
 
 var db *sql.DB
 
@@ -39,8 +35,6 @@ func connectDB() {
 
 	log.Println("Database Connected")
 }
-
-// ── Handlers ────────────────────────────────────────────────────────────
 
 func createUser(c *gin.Context) {
 	var user User

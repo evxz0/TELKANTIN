@@ -14,13 +14,29 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./user-service/user.sql:/docker-entrypoint-initdb.d/01-user-schema.sql
-      - ./merchant-service/merchant.sql:/docker-entrypoint-initdb.d/02-merchant-schema.sql
       - ./order-service/order.sql:/docker-entrypoint-initdb.d/03-order-schema.sql
       - ./payment-service/payment.sql:/docker-entrypoint-initdb.d/04-payment-schema.sql
     networks:
       - telkantin-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MongoDB (untuk Merchant Service) ─────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: telkantin-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - telkantin-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,13 +79,9 @@ services:
       - "3002:3002"
     environment:
       PORT: 3002
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
-      DB_NAME: telkantin
+      MONGO_URI: mongodb://mongodb:27017/telkantin
     depends_on:
-      mysql:
+      mongodb:
         condition: service_healthy
     networks:
       - telkantin-network
@@ -151,6 +163,7 @@ services:
 
 volumes:
   mysql_data:
+  mongo_data:
 
 networks:
   telkantin-network:
