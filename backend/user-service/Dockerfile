@@ -1,14 +1,12 @@
-FROM golang:1.26-alpine
+FROM golang:1.24-alpine
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-
-RUN go mod download
-
 COPY . .
 
-RUN go build -o main .
+RUN sed -i 's/1.25.0/1.24.0/g' go.mod vendor/modules.txt || true
+
+RUN go build -mod=vendor -o main .
 
 EXPOSE 3000
 
