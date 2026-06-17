@@ -30,8 +30,13 @@ const menuSchema = new mongoose.Schema({
 const Merchant = mongoose.model('Merchant', merchantSchema);
 const Menu     = mongoose.model('Menu', menuSchema);
 
+const { ApolloServer } = require('@apollo/server');
+const { expressMiddleware } = require('@apollo/server/express4');
+const { ApolloServerPluginDrainHttpServer } = require('@apollo/server/plugin/drainHttpServer');
+const http = require('http');
+
 // ── Skema GraphQL ────────────────────────────────────────────────────
-const schema = buildSchema(`
+const typeDefs = `#graphql
   type Toko {
     id: String!
     nama: String!
@@ -55,102 +60,119 @@ const schema = buildSchema(`
     tambahToko(nama: String!, lokasi: String): Toko
     tambahMenu(id_toko: String!, nama_menu: String!, harga: Float!): Menu
   }
-`);
+`;
 
 // ── Resolvers ────────────────────────────────────────────────────────
-const root = {
-  // Mengambil semua data toko dari database
-  semuaToko: async () => {
-    try {
-      const merchants = await Merchant.find();
-      return merchants.map(m => ({
-        id: m._id.toString(),
-        nama: m.name,
-        lokasi: m.location
-      }));
-    } catch (error) {
-      throw new Error('Gagal mengambil data semua toko: ' + error.message);
+const resolvers = {
+  Query: {
+    // Mengambil semua data toko dari database
+    semuaToko: async () => {
+      try {
+        const merchants = await Merchant.find();
+        return merchants.map(m => ({
+          id: m._id.toString(),
+          nama: m.name,
+          lokasi: m.location
+        }));
+      } catch (error) {
+        throw new Error('Gagal mengambil data semua toko: ' + error.message);
+      }
+    },
+
+    // Mengambil data satu toko berdasarkan ID
+    tokoBerdasarkanId: async (_, { id }) => {
+      try {
+        const m = await Merchant.findById(id);
+        if (!m) return null;
+        return { id: m._id.toString(), nama: m.name, lokasi: m.location };
+      } catch (error) {
+        throw new Error('Gagal mengambil data toko: ' + error.message);
+      }
+    },
+
+    // Mengambil daftar menu berdasarkan ID toko
+    menuToko: async (_, { id_toko }) => {
+      try {
+        const menus = await Menu.find({ merchant_id: id_toko });
+        return menus.map(m => ({
+          id: m._id.toString(),
+          id_toko: m.merchant_id.toString(),
+          nama_menu: m.name,
+          harga: m.price
+        }));
+      } catch (error) {
+        throw new Error('Gagal mengambil data menu: ' + error.message);
+      }
     }
   },
+  Mutation: {
+    // Menambahkan toko baru ke database
+    tambahToko: async (_, { nama, lokasi }) => {
+      try {
+        const merchant = await Merchant.create({ name: nama, location: lokasi || null });
+        return { id: merchant._id.toString(), nama: merchant.name, lokasi: merchant.location };
+      } catch (error) {
+        throw new Error('Gagal menambahkan toko baru: ' + error.message);
+      }
+    },
 
-  // Mengambil data satu toko berdasarkan ID
-  tokoBerdasarkanId: async ({ id }) => {
-    try {
-      const m = await Merchant.findById(id);
-      if (!m) return null;
-      return { id: m._id.toString(), nama: m.name, lokasi: m.location };
-    } catch (error) {
-      throw new Error('Gagal mengambil data toko: ' + error.message);
-    }
-  },
-
-  // Mengambil daftar menu berdasarkan ID toko
-  menuToko: async ({ id_toko }) => {
-    try {
-      const menus = await Menu.find({ merchant_id: id_toko });
-      return menus.map(m => ({
-        id: m._id.toString(),
-        id_toko: m.merchant_id.toString(),
-        nama_menu: m.name,
-        harga: m.price
-      }));
-    } catch (error) {
-      throw new Error('Gagal mengambil data menu: ' + error.message);
-    }
-  },
-
-  // Menambahkan toko baru ke database
-  tambahToko: async ({ nama, lokasi }) => {
-    try {
-      const merchant = await Merchant.create({ name: nama, location: lokasi || null });
-      return { id: merchant._id.toString(), nama: merchant.name, lokasi: merchant.location };
-    } catch (error) {
-      throw new Error('Gagal menambahkan toko baru: ' + error.message);
-    }
-  },
-
-  // Menambahkan menu baru ke database
-  tambahMenu: async ({ id_toko, nama_menu, harga }) => {
-    try {
-      const menu = await Menu.create({ merchant_id: id_toko, name: nama_menu, price: harga });
-      return {
-        id: menu._id.toString(),
-        id_toko: menu.merchant_id.toString(),
-        nama_menu: menu.name,
-        harga: menu.price
-      };
-    } catch (error) {
-      throw new Error('Gagal menambahkan menu baru: ' + error.message);
+    // Menambahkan menu baru ke database
+    tambahMenu: async (_, { id_toko, nama_menu, harga }) => {
+      try {
+        const menu = await Menu.create({ merchant_id: id_toko, name: nama_menu, price: harga });
+        return {
+          id: menu._id.toString(),
+          id_toko: menu.merchant_id.toString(),
+          nama_menu: menu.name,
+          harga: menu.price
+        };
+      } catch (error) {
+        throw new Error('Gagal menambahkan menu baru: ' + error.message);
+      }
     }
   }
 };
 
 // ── Express Server ───────────────────────────────────────────────────
-const app = express();
+async function startApolloServer() {
+  const app = express();
+  const httpServer = http.createServer(app);
 
-app.use(cors());
-app.use(express.json());
-
-// Health Check
-app.get('/health', async (req, res) => {
-  const dbState = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  res.json({
-    status: 'ok',
-    layanan: 'merchant-graphql (GraphQL Layer - Toko)',
-    database: { type: 'MongoDB', status: dbState }
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
-});
 
-// Endpoint utama GraphQL
-app.use('/graphql', graphqlHTTP({
-  schema: schema,
-  rootValue: root,
-  graphiql: true, // Mengaktifkan tampilan UI GraphiQL agar mudah diuji coba di browser
-}));
+  await server.start();
 
-const PORT = process.env.PORT || 4001;
+  app.use(cors());
+  app.use(express.json());
 
-app.listen(PORT, () => {
-  console.log(`🛍️  Merchant-GraphQL berjalan di http://localhost:${PORT}`);
-  console.log(`📊 Halaman Uji Coba GraphQL: http://localhost:${PORT}/graphql`);
+  // Health Check
+  app.get('/health', async (req, res) => {
+    const dbState = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    res.json({
+      status: 'ok',
+      layanan: 'merchant-graphql (Apollo GraphQL - Toko)',
+      database: { type: 'MongoDB', status: dbState }
+    });
+  });
+
+  // Endpoint utama GraphQL
+  app.use(
+    '/graphql',
+    expressMiddleware(server)
+  );
+
+  const PORT = process.env.PORT || 4001;
+
+  httpServer.listen(PORT, () => {
+    console.log(`🛍️  Merchant-GraphQL (Apollo) berjalan di http://localhost:${PORT}`);
+    console.log(`📊 Apollo Sandbox Uji Coba: http://localhost:${PORT}/graphql`);
+  });
+}
+
+startApolloServer().catch(err => {
+  console.error("Gagal memulai Apollo Server:", err);
 });
