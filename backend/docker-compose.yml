@@ -146,6 +146,66 @@ services:
     networks:
       - telkantin-network
 
+  merchant-graphql:
+    build:
+      context: ./merchant-graphql
+      dockerfile: Dockerfile
+    container_name: telkantin-merchant-graphql
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      MONGO_URI: mongodb://mongodb:27017/telkantin
+    depends_on:
+      - mongodb
+    networks:
+      - telkantin-network
+
+  order-graphql:
+    build:
+      context: ./order-graphql
+      dockerfile: Dockerfile
+    container_name: telkantin-order-graphql
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      ORDER_SERVICE_URL: http://order-service:3000
+    depends_on:
+      - order-service
+    networks:
+      - telkantin-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: telkantin-api-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      USER_SERVICE_URL: http://user-service:3000
+      MERCHANT_SERVICE_URL: http://merchant-service:3002
+      ORDER_SERVICE_URL: http://order-service:3000
+      PAYMENT_SERVICE_URL: http://payment-service:3000
+      ANALYTICS_SERVICE_URL: http://analytics-service:8000
+      MERCHANT_GRAPHQL_URL: http://merchant-graphql:4001
+      ORDER_GRAPHQL_URL: http://order-graphql:4002
+    depends_on:
+      - user-service
+      - merchant-service
+      - order-service
+      - payment-service
+      - analytics-service
+      - merchant-graphql
+      - order-graphql
+    networks:
+      - telkantin-network
+
 volumes:
   mysql_data:
   postgres_data:

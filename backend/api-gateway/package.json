@@ -1,0 +1,18 @@
+{
+  "name": "api-gateway",
+  "version": "1.0.0",
+  "description": "API Gateway untuk Sistem Kantin Kampus - Single entry point untuk semua microservices",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^3.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

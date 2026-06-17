@@ -4,7 +4,7 @@ const { buildSchema } = require('graphql');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-// ── Koneksi MongoDB ──────────────────────────────────────────────────
+
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/telkantin';
 
 mongoose.connect(MONGO_URI)
@@ -14,22 +14,22 @@ mongoose.connect(MONGO_URI)
     process.exit(1);
   });
 
-// ── Model Mongoose ───────────────────────────────────────────────────
+
 const merchantSchema = new mongoose.Schema({
-  name:     { type: String, required: true, maxlength: 100 },
+  name: { type: String, required: true, maxlength: 100 },
   location: { type: String, maxlength: 255, default: null }
 }, { timestamps: true });
 
 const menuSchema = new mongoose.Schema({
   merchant_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Merchant', required: true },
-  name:        { type: String, required: true, maxlength: 100 },
-  price:       { type: Number, required: true }
+  name: { type: String, required: true, maxlength: 100 },
+  price: { type: Number, required: true }
 }, { timestamps: true });
 
 const Merchant = mongoose.model('Merchant', merchantSchema);
-const Menu     = mongoose.model('Menu', menuSchema);
+const Menu = mongoose.model('Menu', menuSchema);
 
-// ── Skema GraphQL ────────────────────────────────────────────────────
+
 const schema = buildSchema(`
   type Toko {
     id: String!
@@ -56,7 +56,7 @@ const schema = buildSchema(`
   }
 `);
 
-// ── Resolvers ────────────────────────────────────────────────────────
+
 const root = {
   // Mengambil semua data toko dari database
   semuaToko: async () => {

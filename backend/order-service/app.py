@@ -7,17 +7,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from strawberry.fastapi import GraphQLRouter
 
-# Import DB functions
+
 from db import get_db_connection, init_db
 
-# --- Database & FastAPI Lifespan ---
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database and tables on startup
+
     init_db()
     yield
 
-# --- Strawberry GraphQL Models ---
+
 @strawberry.type
 class Order:
     id: int
@@ -27,7 +27,7 @@ class Order:
     status: str
     payment_status: str
 
-# Helper to map database rows (dict) to GraphQL Order type
+
 def map_row_to_order(row: dict) -> Order:
     return Order(
         id=row["id"],
@@ -38,7 +38,7 @@ def map_row_to_order(row: dict) -> Order:
         payment_status=row.get("payment_status", "unpaid")
     )
 
-# --- GraphQL Query ---
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -65,12 +65,12 @@ class Query:
         finally:
             conn.close()
 
-# --- GraphQL Mutation ---
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def checkout(self, notes: str) -> str:
-        # Retain original checkout signature, but customize returning response
+
         return f"Checkout success with notes: {notes}"
 
     @strawberry.mutation
@@ -110,12 +110,12 @@ class Mutation:
         conn = get_db_connection()
         try:
             with conn.cursor() as cursor:
-                # Check if the order exists first
+
                 cursor.execute("SELECT id FROM orders WHERE id = %s", (id,))
                 if not cursor.fetchone():
                     return None
                 
-                # Dynamically construct updates
+
                 updates = []
                 params = []
                 if user_id is not None:
